@@ -140,7 +140,7 @@ def get_color_palette(logger, img_path):
 
     color_thief = ColorThief(img_path)
 
-    palette_raw = color_thief.get_palette(color_count=2)
+    palette_raw = color_thief.get_palette(color_count=2, quality=1)
 
     for color_raw in palette_raw:
         r = color_raw[0]
