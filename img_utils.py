@@ -2,6 +2,7 @@ import os
 import random
 
 from PIL import Image, ImageFont, ImageDraw
+from colorthief import ColorThief
 
 
 def create_img(logger, aotd):
@@ -10,18 +11,17 @@ def create_img(logger, aotd):
     artist = aotd['artist']
     album = aotd['album']
 
-    palette = get_color_palette(logger)
-
-    img_path = create_background(logger, aotd, palette)
+    cover_path = os.getenv('COVERS_PATH') + '/' + str(aotd['day']) + '.jpg'
+    img_path, palette = create_background(logger, aotd, cover_path)
 
     write_header(logger, img_path, artist, album, palette)
     draw_rectangle(logger, img_path, palette)
-    paste_cover(logger, img_path, aotd)
+    paste_cover(logger, img_path, cover_path)
 
     return img_path
 
 
-def create_background(logger, aotd, palette):
+def create_background(logger, aotd, cover_path):
     logger.info('creating background')
 
     imgs_folder = os.getenv('IMGS_FOLDER')
@@ -31,10 +31,12 @@ def create_background(logger, aotd, palette):
     output_format = os.getenv('OUTPUT_FORMAT')
     img_path = imgs_folder + '/' + str(aotd['day']) + '.' + output_format
 
+    palette = get_color_palette(logger, cover_path)
+
     img = Image.new('RGB', get_img_size(logger), color=palette[0])
     img.save(img_path)
 
-    return img_path
+    return img_path, palette
 
 
 def write_header(logger, img_path, artist, album, palette):
@@ -55,11 +57,9 @@ def write_header(logger, img_path, artist, album, palette):
     draw = ImageDraw.Draw(img)
 
     artist_w, artist_h = draw.textsize(artist, font=artist_font)
-    # artist_position = ((img_size[0] - artist_w) / 2, (img_size[1] - 2 * artist_h - cover_height) / 4)
     artist_position = ((img_size[0] - artist_w) / 2, (img_size[1] - cover_border_height) / 4 - artist_h / 2)
 
     album_w, album_h = draw.textsize(album, font=album_font)
-    # album_position = ((img_size[0] - album_w) / 2, 10 * (img_size[1] - 2 * album_h - cover_height) / 4)
     album_position = ((img_size[0] - album_w) / 2,  (3 * img_size[1] + cover_border_height - 2 * album_h) / 4)
     text_color = palette[1]
 
@@ -78,13 +78,11 @@ def get_img_size(logger):
     return img_width, img_height
 
 
-def paste_cover(logger, img_path, aotd):
+def paste_cover(logger, img_path, cover_path):
     logger.info('writing cover...')
 
     img = Image.open(img_path)
     img_size = get_img_size(logger)
-
-    cover_path = os.getenv('COVERS_PATH') + '/' + str(aotd['day']) + '.jpg'
 
     cover_width = int(os.getenv('COVER_WIDTH'))
     cover_size = cover_width, cover_width
@@ -135,16 +133,21 @@ def draw_rectangle(logger, img_path, palette):
     img.save(img_path)
 
 
-def get_color_palette(logger):
+def get_color_palette(logger, img_path):
     logger.info('getting color palette...')
 
     palette = []
 
-    background = get_random_color(logger)
-    accent = get_accent_color(logger, background)
+    color_thief = ColorThief(img_path)
 
-    palette.append(background)
-    palette.append(accent)
+    palette_raw = color_thief.get_palette(color_count=2)
+
+    for color_raw in palette_raw:
+        r = color_raw[0]
+        g = color_raw[1]
+        b = color_raw[2]
+
+        palette.append(rgb_to_hex(logger, int(r), int(g), int(b)))
 
     return palette
 
@@ -155,20 +158,13 @@ def get_random_color(logger):
     return '#' + '%06x' % random.randint(0, 0xFFFFFF)
 
 
-def get_accent_color(logger, original):
-    logger.info('getting complementary color...')
+def rgb_to_hex(logger, r, g, b):
+    logger.info('rgb to hexing...')
 
-    original_red = original[1:3]
-    original_green = original[3:5]
-    original_blue = original[5:7]
+    r_hex = "0x{:02x}".format(r)
+    g_hex = "0x{:02x}".format(g)
+    b_hex = "0x{:02x}".format(b)
 
-    complementary_red = 255 - int(original_red, 16)
-    complementary_green = 255 - int(original_green, 16)
-    complementary_blue = 255 - int(original_blue, 16)
+    hex_color = '#' + str(r_hex)[2:4] + str(g_hex)[2:4] + str(b_hex)[2:4]
 
-    if complementary_red + complementary_green + complementary_blue < 3 * 128:
-        accent = '#0f0f0f'
-    else:
-        accent = '#f0f0f0'
-
-    return accent
+    return hex_color
