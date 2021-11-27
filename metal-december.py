@@ -1,5 +1,7 @@
 import img_utils
 import utils
+import twitter_utils
+import ig_utils
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -39,3 +41,14 @@ else:
 
     img_path = img_utils.create_img(logger, aotd)
     logger.info(img_path)
+
+    # tweet img
+    if os.getenv('TWITTER_POST') == '1':
+        twitter_utils.tweet_collage(logger, img_path, caption)
+
+    # post collage to instagram
+    if os.getenv('INSTAGRAM_POST') == '1':
+        ig_utils.post_img(logger, img_path, caption)
+
+    # done
+    logger.info('done ✅')

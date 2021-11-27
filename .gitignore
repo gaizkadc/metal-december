@@ -148,3 +148,6 @@ json/*
 covers/*
 img/*
 fonts/*
+
+# Instabot
+config/
