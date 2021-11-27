@@ -2,15 +2,15 @@ import tweepy
 import os
 
 
-def tweet_collage(logger, collage_path, caption):
-    logger.info('tweeting collage')
+def tweet_img(logger, img_path, caption):
+    logger.info('tweeting img')
 
     credentials = get_twitter_credentials(logger)
     api = twitter_login(logger, credentials)
 
-    api.update_with_media(collage_path, status=caption)
+    api.update_with_media(img_path, status=caption)
 
-    logger.info('collage tweeted')
+    logger.info('img tweeted')
 
 
 def get_twitter_credentials(logger):

@@ -44,7 +44,7 @@ else:
 
     # tweet img
     if os.getenv('TWITTER_POST') == '1':
-        twitter_utils.tweet_collage(logger, img_path, caption)
+        twitter_utils.tweet_img(logger, img_path, caption)
 
     # post collage to instagram
     if os.getenv('INSTAGRAM_POST') == '1':
